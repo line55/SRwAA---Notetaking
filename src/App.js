@@ -1,6 +1,6 @@
 import React, { Component } from "react"
 import {withAuthenticator} from 'aws-amplify-react'
-import {API, graphqlOperation} from 'aws-amplify'
+import {Auth, API, graphqlOperation} from 'aws-amplify'
 import {createNote, deleteNote, updateNote} from './graphql/mutations'
 import {listNotes} from './graphql/queries'
 import {onCreateNote, onDeleteNote, onUpdateNote} from './graphql/subscriptions'
@@ -12,13 +12,26 @@ class App extends Component {
   state={
     id:"",
     note:"", //note string contents
-    notes: []
+    notes: [],
   }
 
   //on load, list all the items and subscribe
   componentDidMount() {
     this.getNotes();
-    this.createNoteListnener = API.graphql(graphqlOperation(onCreateNote)).subscribe({
+    this.getUser();
+  }
+
+  componentWillUnmount() {
+    this.createNoteListnener.unsubscribe();
+    this.deleteNoteListener.unsubscribe();
+    this.updateNoteListener.unsubscribe();
+  }
+
+  //and set subscriptions
+  getUser = async () => {
+    let user = await Auth.currentUserInfo();
+    //is it correct to put it here?
+    this.createNoteListnener = API.graphql(graphqlOperation(onCreateNote, {owner: user.username})).subscribe({
       next: noteData => {
         const newNote = noteData.value.data.onCreateNote;
         const prevNotes = this.state.notes.filter(note => note.id !== newNote.id);
@@ -26,7 +39,7 @@ class App extends Component {
         this.setState({notes: updatedNotes, note: "", id: ""});
       }
     });
-    this.deleteNoteListener = API.graphql(graphqlOperation(onDeleteNote)).subscribe({
+    this.deleteNoteListener = API.graphql(graphqlOperation(onDeleteNote, {owner: user.username})).subscribe({
       next: noteData => {
         console.log(noteData);
         const deletedNote = noteData.value.data.onDeleteNote;
@@ -34,7 +47,7 @@ class App extends Component {
         this.setState({notes: updatedNotes});
       }
     });
-    this.updateNoteListener = API.graphql(graphqlOperation(onUpdateNote)).subscribe({
+    this.updateNoteListener = API.graphql(graphqlOperation(onUpdateNote, {owner: user.username})).subscribe({
       next: noteData => {
         const {notes} = this.state;
         console.log(noteData);
@@ -49,12 +62,6 @@ class App extends Component {
       }
 
     })
-  }
-
-  componentWillUnmount() {
-    this.createNoteListnener.unsubscribe();
-    this.deleteNoteListener.unsubscribe();
-    this.updateNoteListener.unsubscribe();
   }
 
   getNotes = async () => {
