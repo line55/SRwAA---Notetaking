@@ -1,0 +1,4 @@
+* Serverless React with AWS Amplify - The Complete Guide 
+- https://www.udemy.com/course/serverless-react-with-aws-amplify
+- this is the code for the first app in the course (which is a great course)
+- Updates not in the original include passing the Auth.user to the subscription functions
