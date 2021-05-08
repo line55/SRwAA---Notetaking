@@ -18,7 +18,7 @@ class App extends Component {
   //on load, list all the items and subscribe
   componentDidMount() {
     this.getNotes();
-    this.getUser();
+    this.getSubscriptions();
   }
 
   componentWillUnmount() {
@@ -28,7 +28,7 @@ class App extends Component {
   }
 
   //and set subscriptions
-  getUser = async () => {
+  getSubscriptions= async () => {
     let user = await Auth.currentUserInfo();
     //is it correct to put it here?
     this.createNoteListnener = API.graphql(graphqlOperation(onCreateNote, {owner: user.username})).subscribe({
